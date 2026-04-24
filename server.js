@@ -122,6 +122,51 @@ app.post('/bfhl', (req, res) => {
     allNodes.add(c);
     });
     const { graph, childSet } = buildGraph(unique);
+    // STEP 1: find all children
+const allChildren = new Set();
+Object.values(graph).forEach(children => {
+    children.forEach(c => allChildren.add(c));
+});
+
+// find roots (nodes that are not children)
+const roots = Object.keys(graph).filter(node => !allChildren.has(node));
+    // STEP 2: process trees from roots
+roots.forEach(root => {
+    const result = dfs(root, graph, new Set(), new Set());
+
+    if (!result.cycle) {
+        const tree = { [root]: result.tree };
+        const depth = calculateDepth(root, graph);
+
+        hierarchies.push({
+            root,
+            tree,
+            depth
+        });
+
+        totalTrees++;
+
+        if (depth > maxDepth) {
+            maxDepth = depth;
+            largestRoot = root;
+        }
+    }
+});
+    // STEP 3: detect cycles
+for (let node of Object.keys(graph)) {
+    const result = dfs(node, graph, new Set(), new Set());
+
+    if (result.cycle) {
+        hierarchies.push({
+            root: node,
+            tree: {},
+            has_cycle: true
+        });
+
+        totalCycles++;
+        break; // avoid duplicates
+    }
+}
     let roots = findRoots(graph, childSet);
 
     // 🔴 handle pure cycle case (no roots)
@@ -142,76 +187,6 @@ app.post('/bfhl', (req, res) => {
     let totalCycles = 0;
     let maxDepth = 0;
     let largestRoot = "";
-
-    for (let node of allNodes) {
-    if (processed.has(node)) continue;
-
-    let root = node;
-
-    // if it's part of a normal tree, use actual root
-    if (roots.includes(node)) {
-        root = node;
-    }
-
-    const result = dfs(root, graph, new Set(), new Set());
-
-    // mark nodes as processed
-    function markVisited(n) {
-        if (processed.has(n)) return;
-        processed.add(n);
-
-        if (graph[n]) {
-            graph[n].forEach(child => markVisited(child));
-        }
-    }
-    markVisited(root);
-
-    if (result.cycle) {
-    // collect nodes in this component
-    const componentNodes = [];
-
-    function collect(n) {
-        if (componentNodes.includes(n)) return;
-        componentNodes.push(n);
-
-        if (graph[n]) {
-            graph[n].forEach(child => collect(child));
-        }
-    }
-
-    collect(root);
-
-    // pick lexicographically smallest node
-    const cycleRoot = componentNodes.sort()[0];
-
-    hierarchies.push({
-        root: cycleRoot,
-        tree: {},
-        has_cycle: true
-    });
-
-    totalCycles++;
-} else {
-        const tree = { [root]: result.tree };
-        const depth = calculateDepthFromRoot(root, graph);
-
-        hierarchies.push({
-            root,
-            tree,
-            depth
-        });
-
-        totalTrees++;
-
-        if (
-            depth > maxDepth ||
-            (depth === maxDepth && root < largestRoot)
-        ) {
-            maxDepth = depth;
-            largestRoot = root;
-        }
-    }
-}
 
     res.json({
         user_id: "mokshagna@0812",
