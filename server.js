@@ -115,78 +115,62 @@ app.post('/bfhl', (req, res) => {
     });
 
     const { unique, duplicates } = processDuplicates(valid);
-    const allNodes = new Set();
-unique.forEach(edge => {
-    const [p, c] = edge.split("->");
-    allNodes.add(p);
-    allNodes.add(c);
-});
-    const { graph, childSet } = buildGraph(unique);
-    // STEP 1: find all children
-const allChildren = new Set();
-Object.values(graph).forEach(children => {
-    children.forEach(c => allChildren.add(c));
-});
+    const { graph } = buildGraph(unique);
 
-// find roots (nodes that are not children)
-const roots = Object.keys(graph).filter(node => !allChildren.has(node));
-    // STEP 2: process trees from roots
-roots.forEach(root => {
-    const result = dfs(root, graph, new Set(), new Set());
-
-    if (!result.cycle) {
-        const tree = { [root]: result.tree };
-        const depth = calculateDepth(root, graph);
-
-        hierarchies.push({
-            root,
-            tree,
-            depth
-        });
-
-        totalTrees++;
-
-        if (depth > maxDepth) {
-            maxDepth = depth;
-            largestRoot = root;
-        }
-    }
-});
-    // STEP 3: detect cycles
-for (let node of Object.keys(graph)) {
-    const result = dfs(node, graph, new Set(), new Set());
-
-    if (result.cycle) {
-        hierarchies.push({
-            root: node,
-            tree: {},
-            has_cycle: true
-        });
-
-        totalCycles++;
-        break; // avoid duplicates
-    }
-}
-    let roots = findRoots(graph, childSet);
-
-    // 🔴 handle pure cycle case (no roots)
-    if (roots.length === 0 && unique.length > 0) {
-        const nodes = new Set();
-        unique.forEach(e => {
-            const [p, c] = e.split("->");
-            nodes.add(p);
-            nodes.add(c);
-        });
-        roots = [Array.from(nodes).sort()[0]];
-    }
-
-    const visited = new Set();
+    // ✅ declare BEFORE using
     const hierarchies = [];
-
     let totalTrees = 0;
     let totalCycles = 0;
     let maxDepth = 0;
     let largestRoot = "";
+
+    // ✅ STEP 1: find all children
+    const allChildren = new Set();
+    Object.values(graph).forEach(children => {
+        children.forEach(c => allChildren.add(c));
+    });
+
+    // ✅ find roots
+    const roots = Object.keys(graph).filter(node => !allChildren.has(node));
+
+    // ✅ STEP 2: process trees
+    roots.forEach(root => {
+        const result = dfs(root, graph, new Set(), new Set());
+
+        if (!result.cycle) {
+            const tree = { [root]: result.tree };
+            const depth = calculateDepth(root, graph);
+
+            hierarchies.push({
+                root,
+                tree,
+                depth
+            });
+
+            totalTrees++;
+
+            if (depth > maxDepth) {
+                maxDepth = depth;
+                largestRoot = root;
+            }
+        }
+    });
+
+    // ✅ STEP 3: detect cycles
+    for (let node of Object.keys(graph)) {
+        const result = dfs(node, graph, new Set(), new Set());
+
+        if (result.cycle) {
+            hierarchies.push({
+                root: node,
+                tree: {},
+                has_cycle: true
+            });
+
+            totalCycles++;
+            break;
+        }
+    }
 
     res.json({
         user_id: "mokshagna@0812",
@@ -202,6 +186,5 @@ for (let node of Object.keys(graph)) {
         }
     });
 });
-
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on ${PORT}`));
