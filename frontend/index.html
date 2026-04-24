@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BFHL Hierarchy Builder</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    pre {
+      background: #222;
+      color: #0f0;
+      padding: 15px;
+      margin-top: 20px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>BFHL Hierarchy Builder</h2>
+
+<p>Enter edges (comma separated):</p>
+
+<textarea id="input">
+A->B, A->C, B->D, X->Y, Y->Z, Z->X
+</textarea>
+
+<br>
+<button onclick="send()">Submit</button>
+
+<pre id="output"></pre>
+
+<script>
+function send() {
+  const raw = document.getElementById("input").value;
+  const data = raw.split(",").map(x => x.trim());
+
+  fetch("https://bfhl-project-zqat.onrender.com/bfhl", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ data })
+  })
+  .then(async res => {
+    const text = await res.text();   // read raw response
+
+    try {
+      return JSON.parse(text);       // try parsing JSON
+    } catch (e) {
+      throw new Error("Server returned non-JSON response: " + text);
+    }
+  })
+  .then(data => {
+    document.getElementById("output").innerText =
+      JSON.stringify(data, null, 2);
+  })
+  .catch(err => {
+    document.getElementById("output").innerText = "Error: " + err.message;
+  });
+}
+</script>
+
+</body>
+</html>
