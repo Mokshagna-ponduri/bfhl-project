@@ -57,12 +57,7 @@ function buildGraph(edges) {
 
     return { graph, childSet };
 }
-const allNodes = new Set();
-unique.forEach(edge => {
-    const [p, c] = edge.split("->");
-    allNodes.add(p);
-    allNodes.add(c);
-});
+
 const processed = new Set();
 function findRoots(graph, childSet) {
     return Object.keys(graph).filter(node => !childSet.has(node));
@@ -120,7 +115,12 @@ app.post('/bfhl', (req, res) => {
     });
 
     const { unique, duplicates } = processDuplicates(valid);
-
+    const allNodes = new Set();
+    unique.forEach(edge => {
+    const [p, c] = edge.split("->");
+    allNodes.add(p);
+    allNodes.add(c);
+    });
     const { graph, childSet } = buildGraph(unique);
     let roots = findRoots(graph, childSet);
 
