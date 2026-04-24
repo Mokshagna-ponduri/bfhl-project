@@ -103,6 +103,19 @@ function calculateDepthFromRoot(root, graph) {
 
     return max + 1;
 }
+function calculateDepth(node, graph) {
+    if (!graph[node] || graph[node].length === 0) {
+        return 1;
+    }
+
+    let max = 0;
+
+    for (let child of graph[node]) {
+        max = Math.max(max, calculateDepth(child, graph));
+    }
+
+    return max + 1;
+}
 app.post('/bfhl', (req, res) => {
     const data = req.body.data || [];
 
