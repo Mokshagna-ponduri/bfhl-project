@@ -116,11 +116,11 @@ app.post('/bfhl', (req, res) => {
 
     const { unique, duplicates } = processDuplicates(valid);
     const allNodes = new Set();
-    unique.forEach(edge => {
+unique.forEach(edge => {
     const [p, c] = edge.split("->");
     allNodes.add(p);
     allNodes.add(c);
-    });
+});
     const { graph, childSet } = buildGraph(unique);
     // STEP 1: find all children
 const allChildren = new Set();
